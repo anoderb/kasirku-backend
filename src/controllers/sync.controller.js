@@ -29,9 +29,10 @@ exports.pushSync = async (req, res) => {
         await connection.beginTransaction();
 
         if (entity_type === 'transaction' && operation === 'create') {
-          // Payload contains header and items
-          const txHeader = typeof payload === 'string' ? JSON.parse(payload) : payload;
-          const txItems = txHeader.items || [];
+          // Flutter mengirim: { transaction: {...}, items: [...] }
+          const rawPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
+          const tx = rawPayload.transaction || rawPayload;
+          const txItems = rawPayload.items || [];
 
           // 1. Insert Transaction Header
           await connection.query(
@@ -41,9 +42,9 @@ exports.pushSync = async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
              ON DUPLICATE KEY UPDATE is_synced = 1`,
             [
-              txHeader.id, txHeader.customer_id, txHeader.cashier_id, txHeader.total_amount, 
-              txHeader.discount, txHeader.final_amount, txHeader.payment_method, txHeader.amount_paid, 
-              txHeader.change_amount, txHeader.status, txHeader.note, txHeader.created_at
+              tx.id, tx.customer_id, tx.cashier_id, tx.total_amount, 
+              tx.discount, tx.final_amount, tx.payment_method, tx.amount_paid, 
+              tx.change_amount, tx.status, tx.note, tx.created_at
             ]
           );
 
@@ -61,9 +62,7 @@ exports.pushSync = async (req, res) => {
                 ]
               );
               
-              // 3. Deduct Stock on Server (if we track grand truth stock on server)
-              // Note: The mobile app already deducted the stock locally. 
-              // We must mirror that deduction on the server.
+              // 3. Deduct Stock on Server
               await connection.query(
                 `UPDATE products SET stock = stock - ? WHERE id = ?`,
                 [tItem.quantity, tItem.product_id]
@@ -71,7 +70,9 @@ exports.pushSync = async (req, res) => {
             }
           }
         } else if (entity_type === 'debt' && operation === 'create') {
-          const debt = typeof payload === 'string' ? JSON.parse(payload) : payload;
+          // Flutter mengirim: { debt: {...} }
+          const rawPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
+          const debt = rawPayload.debt || rawPayload;
           await connection.query(
             `INSERT INTO debts 
              (id, customer_id, transaction_id, total_amount, paid_amount, remaining_amount, status, note, created_at, updated_at, is_synced)
