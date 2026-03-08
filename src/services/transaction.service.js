@@ -6,7 +6,9 @@ const { v4: uuidv4 } = require('uuid');
  */
 exports.getAllTransactions = async (req) => {
   const { search, date, start_date, end_date, page = 1, limit = 20 } = req.query;
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
 
   let whereClause = 'WHERE t.status = "completed"';
   const params = [];
@@ -35,8 +37,8 @@ exports.getAllTransactions = async (req) => {
      LEFT JOIN customers c ON t.customer_id = c.id
      ${whereClause}
      ORDER BY t.created_at DESC
-     LIMIT ? OFFSET ?`,
-    [...params, parseInt(limit), skip]
+     LIMIT ${limitNum} OFFSET ${skip}`,
+    params
   );
 
   const [[{ total }]] = await db.query(
@@ -48,9 +50,9 @@ exports.getAllTransactions = async (req) => {
     items: transactions,
     meta: {
       total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      totalPages: Math.ceil(total / parseInt(limit))
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum)
     }
   };
 };

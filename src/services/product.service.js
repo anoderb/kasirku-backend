@@ -3,7 +3,9 @@ const { v4: uuidv4 } = require('uuid');
 
 exports.getAllProducts = async (req) => {
   const { search, category, page = 1, limit = 20 } = req.query;
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
   
   let whereClause = 'WHERE p.is_active = 1';
   const params = [];
@@ -18,8 +20,8 @@ exports.getAllProducts = async (req) => {
     params.push(category);
   }
 
-  // db.query digunakan karena db.execute (prepared statement) tidak kompatibel
-  // dengan LIMIT/OFFSET sebagai parameter di MySQL2
+  // Gunakan db.query (bukan db.execute) dan LIMIT/OFFSET langsung di SQL string
+  // karena mysql2 prepared statement tidak kompatibel dengan dynamic SQL + LIMIT params
   const [products] = await db.query(
     `SELECT p.*, c.name AS category_name, s.name AS supplier_name
      FROM products p
@@ -27,8 +29,8 @@ exports.getAllProducts = async (req) => {
      LEFT JOIN suppliers s ON p.supplier_id = s.id
      ${whereClause}
      ORDER BY p.name ASC
-     LIMIT ? OFFSET ?`,
-    [...params, parseInt(limit), skip]
+     LIMIT ${limitNum} OFFSET ${skip}`,
+    params
   );
 
   const [[{ total }]] = await db.query(
@@ -40,9 +42,9 @@ exports.getAllProducts = async (req) => {
     items: products,
     meta: {
       total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      totalPages: Math.ceil(total / parseInt(limit))
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum)
     }
   };
 };

@@ -78,6 +78,7 @@ exports.getRangeSummary = async (startDate, endDate) => {
  * @param {number} limit - default 10
  */
 exports.getTopProducts = async (startDate, endDate, limit = 10) => {
+  const limitNum = parseInt(limit);
   const [products] = await db.query(
     `SELECT 
        ti.product_id,
@@ -90,8 +91,8 @@ exports.getTopProducts = async (startDate, endDate, limit = 10) => {
      WHERE DATE(t.created_at) BETWEEN ? AND ? AND t.status = 'completed'
      GROUP BY ti.product_id, ti.product_name, ti.product_barcode
      ORDER BY total_sold DESC
-     LIMIT ?`,
-    [startDate, endDate, parseInt(limit)]
+     LIMIT ${limitNum}`,
+    [startDate, endDate]
   );
 
   return products;
