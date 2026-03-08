@@ -19,7 +19,8 @@ app.use('/stock', require('./src/routes/stock.routes'));
 app.use('/customers', require('./src/routes/customer.routes'));
 app.use('/suppliers', require('./src/routes/supplier.routes'));
 app.use('/debts', require('./src/routes/debt.routes'));
-// app.use('/transactions', require('./src/routes/transaction.routes'));
+app.use('/transactions', require('./src/routes/transaction.routes'));
+app.use('/reports', require('./src/routes/report.routes'));
 app.use('/sync', require('./src/routes/sync.routes'));
 
 // Basic route
