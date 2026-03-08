@@ -82,6 +82,36 @@ exports.pushSync = async (req, res) => {
               debt.remaining_amount, debt.status, debt.note, debt.created_at, debt.updated_at
             ]
           );
+        } else if (entity_type === 'product') {
+          const productPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
+          const p = productPayload.product;
+          
+          if (operation === 'create' || operation === 'update') {
+            await connection.query(
+              `INSERT INTO products 
+               (id, barcode, name, category_id, supplier_id, buy_price, sell_price, stock, min_stock, unit, image_url, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               ON DUPLICATE KEY UPDATE 
+                 barcode = VALUES(barcode),
+                 name = VALUES(name),
+                 category_id = VALUES(category_id),
+                 supplier_id = VALUES(supplier_id),
+                 buy_price = VALUES(buy_price),
+                 sell_price = VALUES(sell_price),
+                 stock = VALUES(stock),
+                 min_stock = VALUES(min_stock),
+                 unit = VALUES(unit),
+                 image_url = VALUES(image_url),
+                 updated_at = VALUES(updated_at)`,
+              [
+                p.id, p.barcode || null, p.name, p.category_id || null, p.supplier_id || null,
+                p.buy_price || 0, p.sell_price || 0, p.stock || 0, p.min_stock || 0, 
+                p.unit || 'pcs', p.image_url || null, p.created_at || new Date().toISOString(), p.updated_at || new Date().toISOString()
+              ]
+            );
+          } else if (operation === 'delete') {
+            await connection.query('UPDATE products SET is_active = 0 WHERE id = ?', [p.id]);
+          }
         }
 
         await connection.commit();
