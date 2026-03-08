@@ -18,7 +18,9 @@ exports.getAllProducts = async (req) => {
     params.push(category);
   }
 
-  const [products] = await db.execute(
+  // db.query digunakan karena db.execute (prepared statement) tidak kompatibel
+  // dengan LIMIT/OFFSET sebagai parameter di MySQL2
+  const [products] = await db.query(
     `SELECT p.*, c.name AS category_name, s.name AS supplier_name
      FROM products p
      LEFT JOIN categories c ON p.category_id = c.id
@@ -29,7 +31,7 @@ exports.getAllProducts = async (req) => {
     [...params, parseInt(limit), skip]
   );
 
-  const [[{ total }]] = await db.execute(
+  const [[{ total }]] = await db.query(
     `SELECT COUNT(*) AS total FROM products p ${whereClause}`,
     params
   );

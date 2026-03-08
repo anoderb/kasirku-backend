@@ -78,7 +78,7 @@ exports.getRangeSummary = async (startDate, endDate) => {
  * @param {number} limit - default 10
  */
 exports.getTopProducts = async (startDate, endDate, limit = 10) => {
-  const [products] = await db.execute(
+  const [products] = await db.query(
     `SELECT 
        ti.product_id,
        ti.product_name,

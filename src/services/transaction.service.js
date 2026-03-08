@@ -29,7 +29,7 @@ exports.getAllTransactions = async (req) => {
     params.push(`%${search}%`, `%${search}%`);
   }
 
-  const [transactions] = await db.execute(
+  const [transactions] = await db.query(
     `SELECT t.*, c.name AS customer_name
      FROM transactions t
      LEFT JOIN customers c ON t.customer_id = c.id
@@ -39,7 +39,7 @@ exports.getAllTransactions = async (req) => {
     [...params, parseInt(limit), skip]
   );
 
-  const [[{ total }]] = await db.execute(
+  const [[{ total }]] = await db.query(
     `SELECT COUNT(*) AS total FROM transactions t ${whereClause}`,
     params
   );
